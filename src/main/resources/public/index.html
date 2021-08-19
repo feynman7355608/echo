@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Echo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ant-design-vue@2.2.6/dist/antd.css">
+</head>
+<body>
+<div id="app">
+    <a-collapse>
+        <a-collapse-panel key="1" header="环境变量">
+            <a-descriptions>
+                <a-descriptions-item v-for="(item, index) in env" :key="index" :label="item.key">{{ item.val }}
+                </a-descriptions-item>
+            </a-descriptions>
+        </a-collapse-panel>
+        <a-collapse-panel key="2" header="Java Info">
+            <a-descriptions>
+                <a-descriptions-item v-for="(item, index) in systemInfo" :key="index" :label="item.key">{{ item.val }}
+                </a-descriptions-item>
+            </a-descriptions>
+        </a-collapse-panel>
+        <a-collapse-panel key="3" header="执行命令">
+            <a-row type="flex" justify="space-around">
+                <a-col :span="11">
+                    <a-form>
+                        <a-form-item label="命令">
+                            <a-input v-model:value="cmd"/>
+                        </a-form-item>
+                        <a-form-item label="最长等待时间">
+                            <a-input-number id="inputNumber" v-model:value="timeout" :min="1" :max="180"/>
+                        </a-form-item>
+                        <a-button @click="exec">执行</a-button>
+                    </a-form>
+                </a-col>
+                <a-col :span="11">
+                    {{ cmdRes }}
+                </a-col>
+            </a-row>
+        </a-collapse-panel>
+    </a-collapse>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/vue@next"></script>
+<script src="https://cdn.jsdelivr.net/npm/ant-design-vue@next/dist/antd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.js"></script>
+<script>
+    const app = Vue.createApp({
+        setup() {
+            const env = Vue.ref()
+            const systemInfo = Vue.ref()
+            axios.request({
+                method: 'GET',
+                url: '/env',
+            }).then(res => {
+                const data = res.data
+                const arr = []
+                for (const key in data) {
+                    arr.push({
+                        key,
+                        val: data[key]
+                    })
+                }
+                env.value = arr
+            })
+
+            axios.request({
+                method: 'GET',
+                url: '/systemInfo',
+            }).then(res => {
+                const data = res.data
+                const arr = []
+                for (const key in data) {
+                    arr.push({
+                        key,
+                        val: data[key]
+                    })
+                }
+                systemInfo.value = arr
+            })
+
+            // Shell执行
+            const cmd = Vue.ref('')
+            const timeout = Vue.ref(3)
+            const cmdRes = Vue.ref('')
+            const exec = () => {
+                axios.request({
+                    method: 'GET',
+                    url: '/exec',
+                    params: {
+                        shell: cmd.value,
+                        s: timeout.value
+                    }
+                }).then(res => {
+                    const data = res.data
+
+                    cmdRes.value = data
+                })
+            }
+
+            return {
+                env,
+                systemInfo,
+
+                cmd,
+                exec,
+                timeout,
+                cmdRes,
+            };
+        }
+    });
+
+    app.use(antd);
+
+    app.mount('#app');
+</script>
+</body>
+</html>
