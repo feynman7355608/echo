@@ -5,41 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Echo</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ant-design-vue@2.2.6/dist/antd.css">
+    <style>
+        .container {
+            display: none;
+        }
+        .ready {
+            display: block !important;
+        }
+    </style>
 </head>
 <body>
 <div id="app">
-    <a-collapse>
-        <a-collapse-panel key="1" header="环境变量">
-            <a-descriptions>
-                <a-descriptions-item v-for="(item, index) in env" :key="index" :label="item.key">{{ item.val }}
-                </a-descriptions-item>
-            </a-descriptions>
-        </a-collapse-panel>
-        <a-collapse-panel key="2" header="Java Info">
-            <a-descriptions>
-                <a-descriptions-item v-for="(item, index) in systemInfo" :key="index" :label="item.key">{{ item.val }}
-                </a-descriptions-item>
-            </a-descriptions>
-        </a-collapse-panel>
-        <a-collapse-panel key="3" header="执行命令">
-            <a-row type="flex" justify="space-around">
-                <a-col :span="11">
-                    <a-form>
-                        <a-form-item label="命令">
-                            <a-input v-model:value="cmd"/>
-                        </a-form-item>
-                        <a-form-item label="最长等待时间">
-                            <a-input-number id="inputNumber" v-model:value="timeout" :min="1" :max="180"/>
-                        </a-form-item>
-                        <a-button @click="exec">执行</a-button>
-                    </a-form>
-                </a-col>
-                <a-col :span="11">
-                    {{ cmdRes }}
-                </a-col>
-            </a-row>
-        </a-collapse-panel>
-    </a-collapse>
+    <div ref="container" class="container" :class="{ ready: isReady }">
+        <a-collapse>
+            <a-collapse-panel key="1" header="环境变量">
+                <a-descriptions>
+                    <a-descriptions-item v-for="(item, index) in env" :key="index" :label="item.key">{{ item.val }}
+                    </a-descriptions-item>
+                </a-descriptions>
+            </a-collapse-panel>
+            <a-collapse-panel key="2" header="Java Info">
+                <a-descriptions>
+                    <a-descriptions-item v-for="(item, index) in systemInfo" :key="index" :label="item.key">{{ item.val
+                        }}
+                    </a-descriptions-item>
+                </a-descriptions>
+            </a-collapse-panel>
+            <a-collapse-panel key="3" header="执行命令">
+                <a-row type="flex" justify="space-around">
+                    <a-col :span="11">
+                        <a-form>
+                            <a-form-item label="命令">
+                                <a-input v-model:value="cmd"/>
+                            </a-form-item>
+                            <a-form-item label="最长等待时间">
+                                <a-input-number id="inputNumber" v-model:value="timeout" :min="1" :max="180"/>
+                            </a-form-item>
+                            <a-button @click="exec">执行</a-button>
+                        </a-form>
+                    </a-col>
+                    <a-col :span="11">
+                        {{ cmdRes }}
+                    </a-col>
+                </a-row>
+            </a-collapse-panel>
+        </a-collapse>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/vue@next"></script>
 <script src="https://cdn.jsdelivr.net/npm/ant-design-vue@next/dist/antd.js"></script>
@@ -47,6 +58,8 @@
 <script>
     const app = Vue.createApp({
         setup() {
+            const isReady = Vue.ref(false)
+
             const env = Vue.ref()
             const systemInfo = Vue.ref()
             axios.request({
@@ -98,7 +111,13 @@
                 })
             }
 
+            Vue.onMounted(() => {
+                isReady.value = true
+            })
+
             return {
+                isReady,
+
                 env,
                 systemInfo,
 

@@ -1,0 +1,33 @@
+spring.application.name: echo
+
+server:
+  port: 60001
+
+management:
+  server:
+    port: 60002 # ActuatorWeb访问端口
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+    prometheus:
+      enabled: true
+  endpoints:
+    jmx:
+      exposure:
+        include: '*'
+    web:
+      exposure:
+        include: '*'
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  info:
+    git: # https://github.com/git-commit-id/git-commit-id-maven-plugin 显示 git 提交信息
+      mode: full
+logging:
+  pattern:
+    dateformat: 'yyyy-MM-dd HH:mm:ss.SSS,Asia/Shanghai'
+  file:
+    name: ./logs/${spring.application.name}.log
