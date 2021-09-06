@@ -1,8 +1,10 @@
+# syntax=docker/dockerfile:1.3
+
 ARG MAVEN_IMAGE=maven:3-adoptopenjdk-11
 ARG MAVEN_RUNTIME=adoptopenjdk:11-jre-hotspot
 
 # -----------------------------------------------------------------------------
-# Build 构建，这部分最好提取出来利用 CI 执行，可以有 maven 缓存使用
+# Build 构建，使用了 buildx 的缓存
 # -----------------------------------------------------------------------------
 FROM ${MAVEN_IMAGE} AS build
 
@@ -10,13 +12,11 @@ WORKDIR /application
 
 COPY build/settings.xml /usr/share/maven/ref/settings-docker.xml
 
-# pre dependency，需要按照项目结构，将所有的 pom.xml 都复制进去
-COPY pom.xml ./pom.xml
-RUN mvn -B -f /application/pom.xml -s /usr/share/maven/ref/settings-docker.xml dependency:resolve
+# copy 复制所有文件，建议有选择的只把 src 和 lib 复制进去，CI 中不会有log等文件就无所谓了
+COPY . .
 
 # build
-COPY src /application/src
-RUN mvn -f /application/pom.xml -s /usr/share/maven/ref/settings-docker.xml clean package -DskipTests
+RUN --mount=type=cache,target=/usr/share/maven/ref/repository mvn -f /application/pom.xml -s /usr/share/maven/ref/settings-docker.xml clean package -DskipTests
 
 # -----------------------------------------------------------------------------
 # spring-boot unpacker

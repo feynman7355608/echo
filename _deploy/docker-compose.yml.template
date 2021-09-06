@@ -1,0 +1,44 @@
+version: "3.7"
+services:
+  ${SERVICE_NAME}:
+    image: ${IMAGE}
+    restart: always
+    networks:
+      - gateway_edge
+      - internal
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: gateway_edge
+
+      traefik.http.routers.${SERVICE_NAME}.service: ${SERVICE_NAME}
+      traefik.http.routers.${SERVICE_NAME}.rule: Host(\`${DOMAIN}\`)
+      traefik.http.routers.${SERVICE_NAME}.entrypoints: http
+      traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port: 8080
+
+      traefik.http.routers.${MONITOR_SERVICE_NAME}.service: ${MONITOR_SERVICE_NAME}
+      traefik.http.routers.${MONITOR_SERVICE_NAME}.rule: Host(\`${DOMAIN}\`)
+      traefik.http.routers.${MONITOR_SERVICE_NAME}.entrypoints: monitor
+      traefik.http.services.${MONITOR_SERVICE_NAME}.loadbalancer.server.port: 8081
+
+      # healthCheck
+      traefik.http.services.${SERVICE_NAME}.loadbalancer.healthCheck.path: /actuator
+      traefik.http.services.${SERVICE_NAME}.loadbalancer.healthCheck.scheme: http
+      traefik.http.services.${SERVICE_NAME}.loadbalancer.healthCheck.port: 8081
+    volumes:
+      - "./application.yml:/application/config/application-platform.yml"
+      - ${LOG_DIR}:/application/logs
+
+  redis:
+    image: redis
+    restart: always
+    command: redis-server --appendonly yes
+    networks:
+      - internal
+
+networks:
+  internal:
+  gateway_edge:
+    name: gateway_edge
+    external: true
+
+# 基于 spring-boot service template v1.0

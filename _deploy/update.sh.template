@@ -1,0 +1,51 @@
+#!/bin/bash
+# 更新服务并检测可用性
+# usage:
+# ./update.sh ${service_name}
+
+set -e
+
+SERVICE_NAME=\$1
+
+if [ ! -n "\$1" ];then
+    SERVICE_NAME=${__SERVICE_NAME}
+fi
+
+HEALTHY="healthy"
+STARTING="starting"
+UNHEALTHY="unhealthy"
+
+# update
+docker-compose -p \${SERVICE_NAME} up -d
+
+# check healthy
+if [[ \${SERVICE_NAME} = '' ]]; then
+    echo "ignore healthy check."
+    exit 0
+fi
+
+RESIDUE=20
+while(( \${RESIDUE} > 0 ))
+do
+    let "RESIDUE--"
+    set +e
+    STATUS=\$(docker inspect --format '{{.State.Health.Status}}' \${SERVICE_NAME}_\${SERVICE_NAME}_1)
+    CODE=\$?
+    set -e
+    if [[ \${CODE} = 1 ]]; then
+        echo "该服务不支持健康检查"
+        exit 1
+    fi
+    if [[ \${STATUS} = \${STARTING} ]]; then
+        echo "Health check: \${STATUS}"
+        sleep 3
+    elif [[ \${STATUS} = \${HEALTHY} ]]; then
+        echo \${STATUS}
+        exit 0
+    else
+        echo "error! status: \${STATUS}"
+        exit 1
+    fi
+done
+echo "TIMEOUT! 一分钟服务未进入健康状态，请手动检查状态. Last status: \${STATUS}"
+exit 0
